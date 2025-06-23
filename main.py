@@ -117,6 +117,8 @@ class AITaskAgent:
                 return self.task_manager.complete_task(task_id=args["task_id"])
             elif function_name == "get_task_statistics":
                 return self.task_manager.get_task_statistics()
+            elif function.name == "retrieve_recovery_info":
+                return self.task_manager.retrieve_recovery_info()
             else:
                 return f"Unknown function: {function_name}"
 
@@ -194,7 +196,7 @@ class AITaskAgent:
                 instructions="You help answer disaster recovery planning and compliance questions.",
                 tools=[{"type": "retrieval"}],
                 model="gpt-4-turbo",
-                vector_store_ids=[<your_vector_store_id_here>],
+                vector_store_ids=[os.getenv("VECTORIZE_PIPELINE_ID")],
             )
 
             thread = self.client.beta.threads.create()
