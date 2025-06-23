@@ -1,0 +1,2 @@
+Infrastructure Bottleneck Detection: Common delays stem from blocked rural access roads and damaged utility lines.
+    Use thermal and optical imagery to identify hotspots of slowed recovery.

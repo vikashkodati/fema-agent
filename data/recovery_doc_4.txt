@@ -1,0 +1,2 @@
+Post-Disaster Audit Preparation: Maintain a running log of all cleared zones, pending tasks, and contractor assignments.
+    All entries must be digitally signed and traceable to original observation events.

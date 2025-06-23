@@ -1,0 +1,2 @@
+FEMA Reporting Guidelines: Weekly updates must be submitted documenting road clearance, debris removal,
+    and utility restoration. Ensure all data includes timestamped imagery and geotagged location details for compliance review.

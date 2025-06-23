@@ -1,0 +1,2 @@
+Disaster Triage Protocol: In the immediate aftermath of a disaster, field teams prioritize life-saving efforts.
+    Tasks include marking inaccessible zones, checking utility safety, and identifying major roadblocks for emergency vehicles.
