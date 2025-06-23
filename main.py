@@ -2,24 +2,24 @@
 AI Task Manager Agent
 Demostrates OpenAI SDK usage with tool calling
 """
+
 from openai import OpenAI
 from dotenv import load_dotenv
 from taskmanager import TaskManager
 import os
 import json
+
 load_dotenv()
-
-
 
 
 class AITaskAgent:
     """
     An AI agent that manages tasks using OpenAI's tool calling capabilities
     """
+
     def __init__(self):
         self.task_manager = TaskManager()
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 
         self.tools = [
             {
@@ -32,28 +32,25 @@ class AITaskAgent:
                         "properties": {
                             "title": {
                                 "type": "string",
-                                "description": "Title of the task"
+                                "description": "Title of the task",
                             },
                             "priority": {
                                 "type": "string",
                                 "description": "Priority level (high/medium/low)",
-                                "enum": ["high", "medium", "low"]
-                            }
+                                "enum": ["high", "medium", "low"],
+                            },
                         },
-                        "required": ["title"]
-                    }
-                }
+                        "required": ["title"],
+                    },
+                },
             },
             {
                 "type": "function",
                 "function": {
                     "name": "list_tasks",
                     "description": "List all tasks sorted by priority and completion status",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {}
-                    }
-                }
+                    "parameters": {"type": "object", "properties": {}},
+                },
             },
             {
                 "type": "function",
@@ -65,37 +62,54 @@ class AITaskAgent:
                         "properties": {
                             "task_id": {
                                 "type": "integer",
-                                "description": "ID of the task to complete"
+                                "description": "ID of the task to complete",
                             }
                         },
-                        "required": ["task_id"]
-                    }
-                }
+                        "required": ["task_id"],
+                    },
+                },
             },
             {
                 "type": "function",
                 "function": {
                     "name": "get_task_statistics",
                     "description": "Get task statistics and encouraging messages",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "retrieve_recovery_info",
+                    "description": "Retrieves relevant disaster recovery planning guidance.",
                     "parameters": {
                         "type": "object",
-                        "properties": {}
-                    }
-                }
-            }
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Question about recovery plans or compliance",
+                            }
+                        },
+                        "required": ["query"],
+                    },
+                },
+            },
         ]
 
         # execute the function
         def execute_tool(self, tool_call):
             # Map tool calls to TaskManager methods
             function_name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
-            
+            args = (
+                json.loads(tool_call.function.arguments)
+                if tool_call.function.arguments
+                else {}
+            )
+
             # Execute the corresponding TaskManager method
             if function_name == "add_task":
                 return self.task_manager.add_task(
-                    title=args.get("title"),
-                    priority=args.get("priority", "medium")
+                    title=args.get("title"), priority=args.get("priority", "medium")
                 )
             elif function_name == "list_tasks":
                 return self.task_manager.list_tasks()
@@ -105,7 +119,6 @@ class AITaskAgent:
                 return self.task_manager.get_task_statistics()
             else:
                 return f"Unknown function: {function_name}"
-            
 
         def chat(self, user_message: str) -> str:
             """
@@ -127,12 +140,9 @@ class AITaskAgent:
                         - get_task_statistics: Get task statistics and encouraging messages
                         For general conversation or questions unrelated to task management and productivity respond directly without using tools.
                         Be friendly, encouraging and helpful.
-                        """
+                        """,
                     },
-                    {
-                        "role": "user",
-                        "content": user_message
-                    }
+                    {"role": "user", "content": user_message},
                 ]
 
                 # Get initial response from model
@@ -140,38 +150,65 @@ class AITaskAgent:
                     model="gpt-4.1",
                     input=messages,
                     tools=self.tools,
-                    tool_choice="auto"
+                    tool_choice="auto",
                 )
 
                 # Check if model wants to use a tool
-                if response.output and response.output[0].get("type") == "function_call":
+                if (
+                    response.output
+                    and response.output[0].get("type") == "function_call"
+                ):
                     # Extract tool call details
                     tool_call = response.output[0]
                     args = json.loads(tool_call.arguments)
-                    
+
                     # Execute the tool and get result
                     tool_result = self.execute_tool(tool_call)
-                    
+
                     # Add tool call and result to conversation
                     messages.append(tool_call)  # Add model's function call
-                    messages.append({
-                        "type": "function_call_output",
-                        "call_id": tool_call.call_id,
-                        "output": str(tool_result)
-                    })
-                    
+                    messages.append(
+                        {
+                            "type": "function_call_output",
+                            "call_id": tool_call.call_id,
+                            "output": str(tool_result),
+                        }
+                    )
+
                     # Get final response incorporating tool result
                     final_response = self.client.responses.create(
-                        model="gpt-4.1",
-                        input=messages,
-                        tools=self.tools
+                        model="gpt-4.1", input=messages, tools=self.tools
                     )
                     return final_response.output_text
-                
+
                 # If no tool was called, return direct response
                 return response.output_text
 
             except Exception as e:
                 # Friendly error handling
                 return f"I apologize, but I encountered an error while processing your request: {str(e)}. Please try again or rephrase your request."
+        
+        def retrieve_recovery_info(query: str) -> str:
+            assistant = self.client.beta.assistants.create(
+                name="Disaster Recovery Assistant",
+                instructions="You help answer disaster recovery planning and compliance questions.",
+                tools=[{"type": "retrieval"}],
+                model="gpt-4-turbo",
+                vector_store_ids=[<your_vector_store_id_here>],
+            )
 
+            thread = self.client.beta.threads.create()
+            
+            self.client.beta.threads.messages.create(
+                thread_id=thread.id,
+                role="user",
+                content=query
+            )
+
+            run = self.client.beta.threads.runs.create_and_poll(
+                thread_id=thread.id,
+                assistant_id=assistant.id,
+            )
+
+            messages = self.client.beta.threads.messages.list(thread_id=thread.id)
+            return messages.data[0].content[0].text.value
